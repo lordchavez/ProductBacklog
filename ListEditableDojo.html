@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <link rel="stylesheet" href="dojo-release-1.16.3/dijit/themes/claro/claro.css">
+  <script>dojoConfig = { async: true, parseOnLoad: false }</script>
+  <script src='dojo-release-1.16.3/dojo/dojo.js'></script>
+  <style type="text/css">
+    @import "dojo-release-1.16.3/dojox/grid/resources/claroGrid.css";
+    /*Grid needs an explicit height by default, Altura del grid*/
+    #gridDiv {
+      height: 40em;
+      font-size: 14px;
+    }
+  </style>
+  <script>require(["dijit/form/Button", "dojo/dom", "dojo/domReady!"], function(Button, dom){
+    // Create a button programmatically:
+    var myButton = new Button({
+        label: "Guardar",
+        onClick: function(){
+            // Do something:            
+        }
+    }, "btn1").startup();
+  });
+  </script>
+  <script>
+    require(['dojo/_base/lang', 'dojox/grid/DataGrid', 'dojo/data/ItemFileWriteStore', 'dojox/grid/cells/dijit', 'dojo/dom', 'dojo/domReady!'],
+      function (lang, DataGrid, ItemFileWriteStore, cells, dom) {
+        /*set up data store*/
+        var data = {
+          identifier: "id",
+          items: []
+        };
+        var data_list = [
+          { col1: "normal", col2: false, col3: 'But are not followed by two hexadecimal', col4: 29.91 },
+          { col1: "important", col2: false, col3: 'Because a % sign always indicates', col4: 9.33 },
+          { col1: "important", col2: false, col3: 'Signs can be selectively', col4: 19.34 }
+        ];
+        var rows = 60;
+        for (var i = 0, l = data_list.length; i < rows; i++) {
+          data.items.push(lang.mixin({ id: i + 1 }, data_list[i % l]));
+        }
+        //data.items.push(lang.mixin({ id: 1 }, data_list[0]));
+        //data.items.push(lang.mixin({ id: 2 }, data_list[1]));
+        var store = new ItemFileWriteStore({ data: data });
+
+        /*set up layout*/
+        var layout = [[
+          { 'name': 'Column 1', 'field': 'id', 'width': '80px' },
+          { 'name': 'Column 2', 'field': 'col2', 'width': '100px', editable: true, type: dojox.grid.cells.CheckBox, styles: 'text-align: center;' },
+          { 'name': 'Column 3', 'field': 'col3', 'width': '200px', editable: true },
+          { 'name': 'Column 4', 'field': 'col4', 'width': '150px', editable: true }
+        ]];
+
+        /*create a new grid*/
+        var grid = new DataGrid({
+          id: 'grid',
+          store: store,
+          structure: layout,
+          rowSelector: '20px'
+        });
+
+        /*append the new grid to the div*/
+        grid.placeAt("gridDiv");
+
+        /*Call startup() to render the grid*/
+        grid.startup();
+      });
+  </script>
+</head>
+
+<body class="claro">
+  <p class="info">
+    Product Backlog
+  </p>
+  <div id="gridDiv"></div>
+  <br>
+  <button id="btn1" type="button"></button>
+</body>
+
+</html>
