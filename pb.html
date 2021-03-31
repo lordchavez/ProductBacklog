@@ -10,55 +10,272 @@
       height: 40em;
       font-size: 13px;
       table-layout: auto;
-      width: 1300px;
+      width: 1290px;
+    }
+    #btnSave {
+      font-size: 12px;
     }
   </style>
   <script>dojoConfig = { async: true, parseOnLoad: false }</script>
   <script src='dojo-release-1.16.3/dojo/dojo.js'></script>
-
   <script>
-    require(['dojo/_base/lang', 'dojox/grid/DataGrid', 'dojo/data/ItemFileWriteStore', 'dojox/grid/cells/dijit', 'dojo/dom', 'dojo/domReady!'],
-      function (lang, DataGrid, ItemFileWriteStore, cells, dom) {
-        /*set up data store*/
-        var data = {
-          identifier: "id",
-          items: []
-        };
-        var data_list = [
-          { col1: "normal", col2: false, col3: 'But are not followed by two hexadecimal', col4: 29.91 },
-          { col1: "important", col2: false, col3: 'Because a % sign always indicates', col4: 9.33 },
-          { col1: "important", col2: false, col3: 'Signs can be selectively', col4: 19.34 }
-        ];
-        var rows = 60;
-        for (var i = 0, l = data_list.length; i < rows; i++) {
-          data.items.push(lang.mixin({ id: i + 1 }, data_list[i % l]));
+    /* Set up data store */
+    var data = {
+      identifier: 'id',
+      items: []
+    };
+    
+    // Array to fill the table
+    var data_list = [];
+
+    var store;
+
+    var grid;
+
+    require( [ 'dijit/form/Button', 'dojo/dom', 'dojo/json', 'dojo/domReady!' ], function( Button, dom ) {
+      // Create a button programmatically:
+      
+    } );
+    require( [ 'dijit/form/Button', 'dojo/dom', 'dojo/domReady!'], function( Button, dom ) {
+      // Create a button programmatically:
+      
+    } );
+  </script>
+  <script>
+    require( [ 
+      'dojo/_base/lang',
+      'dojox/grid/DataGrid',
+      'dojo/data/ItemFileWriteStore',
+      'dojo/data/ItemFileReadStore',
+      'dojox/grid/cells/dijit',
+      'dojo/dom',
+      'dojo/on',
+      'dijit/form/Button',
+      'dojo/json',
+      'dojo/_base/array',
+      'dojo/domReady!' ],
+    function ( lang, DataGrid, ItemFileWriteStore, ItemFileReadStore, cells, dom, on, Button, json, array ) {
+
+      
+      
+
+      //
+      // Load the json data
+      //
+      function loadData() {
+
+        // On load event and read the json file
+        dojo.addOnLoad( function() {
+
+          dojo.xhrGet( {
+            // The URL of the request
+            url: 'pb.json',
+            // Handle the result as JSON data
+            handleAs: 'json',
+            // The success handler
+            load: function( response ) {
+              // For every news item we received...
+              dojo.forEach( response.items, function( item ) {
+                // Build data from the JSON
+                console.log( item.id + '|' + item.idHistoria + '|' + item.enunciado );
+                var row = { col1: item.id, col2: item.idHistoria, col3: item.enunciado, col4: null };
+                data_list.push( { row } );
+                data.items.push( lang.mixin( { id: item.id }, row ) );
+              } );
+              // Set the content of the news node
+              loadTable();
+              
+            },
+            // The error handler
+            error: function( error ) {
+              alert( error );
+            }
+          } );
+        } );
+      }
+      //
+      // /.Load the json data
+      //
+
+      
+      //
+      // Load the table
+      //
+      function loadTable() {
+
+        function sortAfterDelete() {
+          
+          data.items = [];
+          data_list = [];
+          dojo.forEach( data.items, function( rowValue, i ) {
+            rowValue.col1 = i + 1;
+            var row = { col1: rowValue.col1, col2: rowValue.col2, col3: rowValue.col3, col4: null };
+            data_list.push( { row } );
+            data.items.push( lang.mixin( { id: rowValue.col1 }, row ) );
+          } );
+
+          dojo.forEach( data.items, function( rowValue, i ) {
+            console.log( rowValue.col1.toString() );
+          } );
+
+          store.save( { onComplete: saveDone, onError: saveFailed } );
+          var gotItems = function( items, request ){
+            //console.log( items );
+          };
+          store.fetch( { onComplete: gotItems } );
+          var newStore = new ItemFileReadStore( { data: data } );
+          grid.store = newStore;
+          //grid2.setStore( newStore );
+          
+
         }
-        //data.items.push(lang.mixin({ id: 1 }, data_list[0]));
-        //data.items.push(lang.mixin({ id: 2 }, data_list[1]));
-        var store = new ItemFileWriteStore({ data: data });
 
-        /*set up layout*/
-        var layout = [[
-          { 'name': 'Column 1', 'field': 'id', 'width': '80px' },
-          { 'name': 'Column 2', 'field': 'col2', 'width': 'auto', editable: true, type: dojox.grid.cells.CheckBox, styles: 'text-align: center;' },
-          { 'name': 'Column 3', 'field': 'col3', 'width': 'auto', editable: true },
-          { 'name': 'Column 4', 'field': 'col4', 'width': 'auto', editable: true }
-        ]];
+        // Delete row function
+        function deleteRow(){
+          var items = this.selection.getSelected();
+          var tmp = array.map( items, function( item ) {
+            store.deleteItem( item );
+            return item;
+          }, this );
+          sortAfterDelete();
+        }
 
-        /*create a new grid*/
-        var grid = new DataGrid({
+        // Delete row button
+        function deleteBtn() {
+          var w = new Button( {
+            label: 'X',
+            onClick: function() {
+              grid.on( 'RowClick', deleteRow, true );
+            }
+          } );
+          w._destroyOnRemove = true;
+          return w;
+        }
+        
+        // Store the data into grid
+        store = new ItemFileWriteStore( { data: data } );
+
+        // Set up layout
+        var layout = [ [
+          { 'name': 'Id', 'field': 'id', 'width': '30px' },
+          { 'name': 'Id Historia', 'field': 'col2', 'width': '80px', editable: true },
+          { 'name': 'Enunciado Historia', 'field': 'col3', 'width': 'auto', editable: true },
+          { 'name': 'Borrar', 'field': 'col4', 'width': '40px', formatter: deleteBtn }
+        ] ];
+
+        // Create a new grid
+        var grid = new DataGrid( {
           id: 'grid',
           store: store,
           structure: layout,
+          selectionMode: 'single',
           rowSelector: '20px'
-        });
+        } );
+        
+        // Append the new grid to the div
+        grid.placeAt( 'gridDiv' );
 
-        /*append the new grid to the div*/
-        grid.placeAt("gridDiv");
-
-        /*Call startup() to render the grid*/
+        // Call startup() to render the grid
         grid.startup();
-      });
+      }
+      //
+      // /.Load the table
+      //
+
+
+      //
+      // Save function
+      //
+      function save( obj ) {
+
+        //console.log( json.stringify( obj ).replace(/\\/g,'') );
+        var xhrArgs = {
+          url: 'save.php',
+          //postData: 'submit=' + dojo.toJson( { key1:"value1", key2:"value2" }, true ),
+          postData: 'submit=' + dojo.toJson( obj ),
+          handleAs: 'text',
+          load: function( data ){
+            console.log( data );
+            alert( data );
+          },
+          error: function( error ) {
+            alert( 'Error al guardar el archivo' );
+          }
+        }
+        // Call the asynchronous xhrPost
+        var deferred = dojo.xhrPost( xhrArgs );
+      }
+      //
+      // /.Save function
+      //
+
+
+
+      //
+      // Add button
+      //
+      var addButton = new Button( {
+          label: '+',
+          onClick: function() {
+            console.log( data.items.length );
+            store.newItem( {"id":5,"idHistoria":"","enunciado":""} );
+            store.save({onComplete: saveDone, onError: saveFailed});
+            store.fetch();
+          }
+      }, 'btnAdd').startup();
+      //
+      // /.Add button
+      //
+
+
+      //
+      // Save button
+      //
+      var saveButton = new Button( {
+          label: 'Guardar',
+          onClick: function( json ) {
+            
+            var jsonTarget = [];
+            var jsonArray = [];
+            
+            array.forEach( data.items, function( rowValue, i ) {
+              //console.log( rowValue, "at index", i );
+              var tmpArray = {
+                'id': rowValue.col1[ 0 ],
+                'idHistoria': rowValue.col2[ 0 ],
+                'enunciado': rowValue.col3[ 0 ]
+              };
+              var jsonValue = JSON.stringify( tmpArray );
+              jsonArray.push( jsonValue );
+            } );
+            jsonTarget.push( { 'items': jsonArray } );
+            //console.log( JSON.stringify( jsonTarget ) );
+
+            save( jsonTarget );
+          }
+      }, 'btnSave').startup();
+      //
+      // /.Save button
+      //
+      
+
+      function saveDone(){
+        console.log("Done saving.");
+      }
+      function saveFailed(){
+        console.log("Save failed.");
+      }
+
+      
+
+      //
+      // Rungrid drag and drop
+      //
+      loadData();
+      
+        
+    } );
+    
   </script>
 </head>
 
@@ -67,6 +284,12 @@
     Product Backlog
   </p>
   <div id="gridDiv"></div>
+  <br>
+  <button id="btnAdd" type="button"></button>
+  <br>
+  <button id="btnSave" type="button"></button>
 </body>
+<script>
 
+</script>
 </html>
